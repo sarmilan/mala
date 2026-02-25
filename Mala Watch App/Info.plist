@@ -24,7 +24,5 @@
 	<array/>
 	<key>WKApplication</key>
 	<true/>
-	<key>WKCompanionAppBundleIdentifier</key>
-	<string></string>
 </dict>
 </plist>
