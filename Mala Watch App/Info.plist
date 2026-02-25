@@ -24,5 +24,7 @@
 	<array/>
 	<key>WKApplication</key>
 	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>com.milan.mala</string>
 </dict>
 </plist>

@@ -14,6 +14,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8D000005000000000000E001"
+               BuildableName = "Mala iOS App.app"
+               BlueprintName = "Mala iOS App"
+               ReferencedContainer = "container:Mala.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "8D000005000000000000D001"
                BuildableName = "Mala Watch App.app"
                BlueprintName = "Mala Watch App"
