@@ -85,8 +85,8 @@ class MalaViewModel: ObservableObject {
     func handleCrownDelta(_ delta: Double) {
         guard delta > 0 else { return }
         crownAccumulator += delta
-        while crownAccumulator >= 2.0 {
-            crownAccumulator -= 2.0
+        while crownAccumulator >= 3.0 {
+            crownAccumulator -= 3.0
             increment()
         }
     }
