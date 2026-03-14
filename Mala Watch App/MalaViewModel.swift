@@ -13,11 +13,19 @@ class MalaViewModel: ObservableObject {
     private let countKey = "mala_current_count"
     private let lifetimeKey = "mala_lifetime_total"
     private var crownAccumulator: Double = 0.0
+    private var crownDidFire: Bool = false
+    private var crownRestTimer: Timer?
     private var resetTimer: Timer?
 
     init() {
         currentCount = UserDefaults.standard.integer(forKey: "mala_current_count")
-        lifetimeTotal = UserDefaults.standard.integer(forKey: "mala_lifetime_total")
+        // Migrate lifetimeTotal to shared store if needed
+        let sharedTotal = SharedStore.shared.lifetimeTotal
+        let localTotal = UserDefaults.standard.integer(forKey: "mala_lifetime_total")
+        if sharedTotal == 0 && localTotal > 0 {
+            SharedStore.shared.lifetimeTotal = localTotal
+        }
+        lifetimeTotal = SharedStore.shared.lifetimeTotal
     }
 
     func increment() {
@@ -74,6 +82,7 @@ class MalaViewModel: ObservableObject {
 
             if stepCount >= totalSteps {
                 timer.invalidate()
+                WatchSessionManager.shared.sendSession(count: startCount)
                 self.currentCount = 0
                 self.isResetting = false
                 self.save()
@@ -83,10 +92,21 @@ class MalaViewModel: ObservableObject {
     }
 
     func handleCrownDelta(_ delta: Double) {
-        guard delta > 0 else { return }
-        crownAccumulator += delta
-        while crownAccumulator >= 3.0 {
-            crownAccumulator -= 3.0
+        let absDelta = abs(delta)
+        guard absDelta > 0 else { return }
+
+        crownAccumulator += absDelta
+
+        // Reset the rest timer — when it fires the gesture is considered over
+        crownRestTimer?.invalidate()
+        crownRestTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { [weak self] _ in
+            self?.crownAccumulator = 0
+            self?.crownDidFire = false
+        }
+
+        // Fire at most one increment per gesture
+        if !crownDidFire && crownAccumulator >= 3.0 {
+            crownDidFire = true
             increment()
         }
     }
@@ -97,6 +117,6 @@ class MalaViewModel: ObservableObject {
 
     private func save() {
         UserDefaults.standard.set(currentCount, forKey: countKey)
-        UserDefaults.standard.set(lifetimeTotal, forKey: lifetimeKey)
+        SharedStore.shared.lifetimeTotal = lifetimeTotal
     }
 }

@@ -4,11 +4,15 @@ struct ContentView: View {
     @StateObject private var viewModel = MalaViewModel()
     @Environment(\.colorScheme) var colorScheme
 
+    @EnvironmentObject private var watchSession: WatchSessionManager
+
     @State private var crownValue: Double = 0.0
     @State private var lastCrownValue: Double = 0.0
     @State private var pressStartTime: Date?
     @State private var pressTimer: Timer?
     @State private var hasTriggeredReset = false
+    @State private var viewSize: CGSize = .zero
+    @State private var topSafeArea: CGFloat = 0
 
     var backgroundColor: Color {
         colorScheme == .dark ? .black : .white
@@ -29,8 +33,9 @@ struct ContentView: View {
 
             VStack(spacing: 6) {
                 ZStack {
-                    Text("\(viewModel.currentCount)")
-                        .font(.system(size: 60, weight: .thin, design: .default))
+                    Text(viewModel.currentCount.formatted(as: watchSession.numeralStyle))
+                        .font(.system(size: watchSession.fontSizeOption.watchFontSize, weight: .thin,
+                                      design: watchSession.fontIsSerif ? .serif : .default))
                         .foregroundColor(foregroundColor)
                         .scaleEffect(viewModel.scale)
                         .animation(.spring(response: 0.2, dampingFraction: 0.5), value: viewModel.scale)
@@ -49,6 +54,7 @@ struct ContentView: View {
                         .foregroundColor(foregroundColor.opacity(0.6))
                 }
             }
+            .offset(y: -topSafeArea / 4)
 
             if viewModel.isDistractionFree {
                 Color.black.opacity(0.96)
@@ -56,6 +62,14 @@ struct ContentView: View {
                     .allowsHitTesting(false)
             }
         }
+        .background(
+            GeometryReader { geo in
+                Color.clear.onAppear {
+                    viewSize = geo.size
+                    topSafeArea = geo.safeAreaInsets.top
+                }
+            }
+        )
         .focusable()
         .digitalCrownRotation(
             $crownValue,
@@ -73,10 +87,21 @@ struct ContentView: View {
         }
         .gesture(
             DragGesture(minimumDistance: 0)
-                .onChanged { _ in
+                .onChanged { value in
                     guard pressStartTime == nil else { return }
                     pressStartTime = Date()
                     hasTriggeredReset = false
+
+                    // Only arm reset if touch started near the count text (center zone).
+                    // Corners and edges — where accidental skin contact happens — are excluded.
+                    let loc = value.startLocation
+                    let cx = viewSize.width / 2
+                    let cy = viewSize.height / 2
+                    let inResetZone = abs(loc.x - cx) < viewSize.width * 0.38
+                                   && abs(loc.y - cy) < viewSize.height * 0.38
+
+                    guard inResetZone else { return }
+
                     pressTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
                         DispatchQueue.main.async {
                             self.hasTriggeredReset = true
@@ -104,11 +129,13 @@ struct ContentView: View {
                 .opacity(0)
             }
         }
+        .persistentSystemOverlays(.hidden)
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+            .environmentObject(WatchSessionManager.shared)
     }
 }
